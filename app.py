@@ -97,14 +97,32 @@ def api_form():
 @app.post("/api/step")
 def api_step():
     body = request.get_json(force=True)
-    sid = body.get("session_id", "default")
-    text = body.get("text", "")
+    return _advance(body.get("session_id", "default"), body.get("text", ""))
 
+
+@app.post("/api/step_audio")
+def api_step_audio():
+    """Same turn, but the answer arrives as a recording.
+
+    Used when the browser's own speech recognition gave up — Gemini listens to
+    the audio itself, which handles accents and hesitant speech far better.
+    """
+    clip = request.files.get("audio")
+    if clip is None:
+        return jsonify({"error": "no audio"}), 400
+    return _advance(
+        request.form.get("session_id", "default"), "",
+        audio=clip.read(), audio_mime=clip.mimetype or "audio/webm",
+    )
+
+
+def _advance(sid: str, text: str, audio: bytes | None = None,
+             audio_mime: str = "audio/webm"):
     sessions = _load()
     answers = _answers(sessions, sid)
 
     try:
-        result = brain.step(answers, text)
+        result = brain.step(answers, text, audio=audio, audio_mime=audio_mime)
     except Exception as exc:  # API down, quota, bad JSON — never leave them stuck
         app.logger.error("brain.step failed: %s", exc)
         return jsonify(
@@ -132,6 +150,7 @@ def api_step():
             "answers": answers,
             "field_focus": result["field_focus"],
             "lang": result["lang"],
+            "heard": result["heard"],
             "done": result["done"],
             "error": False,
             "total_fields": len(FIELD_IDS),

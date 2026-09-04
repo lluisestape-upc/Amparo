@@ -84,6 +84,7 @@ Return ONLY JSON with this shape:
   "reply": "<what to say next, in the person's language — two short sentences max>",
   "field_focus": "<the field_id you are now asking about, or empty if done>",
   "lang": "<BCP-47 tag for the language the person is speaking, e.g. en-US, es-ES, ar-SA>",
+  "heard": "<your transcription, when the answer came as audio; otherwise empty>",
   "done": <true|false>
 }}
 "answers" is the COMPLETE current state of the form: every field you know so
@@ -108,14 +109,29 @@ FIRST_TURN = (
 )
 
 
-def step(answers: dict, user_text: str) -> dict:
+def step(answers: dict, user_text: str, audio: bytes | None = None,
+         audio_mime: str = "audio/webm") -> dict:
     """Advance the conversation one turn.
 
     answers:   fields filled so far (dict of field_id -> value)
     user_text: the person's latest utterance ("" on the very first call)
-    returns:   {"updates", "reply", "field_focus", "lang", "done"}
+    audio:     raw recording of the answer, when the browser could not
+               transcribe it — Gemini listens to it directly, which copes far
+               better with accents and hesitant speech
+    returns:   {"answers", "reply", "field_focus", "lang", "heard", "done"}
     """
-    if not user_text.strip() or (user_text == "__RESUME__" and not answers):
+    if audio is not None:
+        known = json.dumps(answers, ensure_ascii=False)
+        turn = (
+            f"Already known: {known}\n"
+            "The person's answer is in the attached audio. Listen to it, work out "
+            "what they said in whatever language they used, and treat that as "
+            'their utterance. Put your transcription in "heard". If the audio is '
+            'silent or truly unintelligible, leave "heard" empty and kindly ask '
+            "them to say it again.\n"
+            "Remember: this may be a correction to any field, not only the one you asked about."
+        )
+    elif not user_text.strip() or (user_text == "__RESUME__" and not answers):
         turn = FIRST_TURN
     elif user_text == "__RESUME__":
         known = json.dumps(answers, ensure_ascii=False)
@@ -138,9 +154,11 @@ def step(answers: dict, user_text: str) -> dict:
     last_error = None
     for attempt in range(3):
         try:
+            contents = [types.Part.from_bytes(data=audio, mime_type=audio_mime), turn] \
+                if audio is not None else turn
             resp = _get_client().models.generate_content(
                 model=MODEL,
-                contents=turn,
+                contents=contents,
                 config=types.GenerateContentConfig(
                     system_instruction=SYSTEM_PROMPT,
                     response_mime_type="application/json",
@@ -170,5 +188,6 @@ def step(answers: dict, user_text: str) -> dict:
         "reply": data.get("reply", ""),
         "field_focus": data.get("field_focus", ""),
         "lang": data.get("lang", "") or "en-US",
+        "heard": data.get("heard", ""),
         "done": bool(data.get("done", False)),
     }

@@ -40,6 +40,10 @@ Built for the [DEV Weekend Challenge: Generosity Edition](https://dev.to/events/
   the person can't see the screen.
 - **You can correct it at any time.** Say *"no, I said three, not four"* about
   any field, however long ago you answered it. The person is always right.
+- **When the browser can't understand you, Gemini listens instead.** Browser
+  speech recognition is weakest on accents and hesitant speech — exactly the
+  people this is for — so every answer is recorded alongside it, and if it
+  gives up the audio goes to Gemini, which transcribes it directly.
 - **Errors are spoken, never silent text.** A tool for people who can't read
   must not report failures in writing.
 - **Interrupt freely.** Tap the mic while it's talking and it stops to listen.
@@ -82,8 +86,7 @@ You'll need a free [Gemini API key](https://aistudio.google.com/apikey) and an
 
 ## Roadmap
 
-- Speech-to-text via a model that handles accented and disfluent speech better
-  than the browser's built-in recognition
+- A hosted demo, so the tool can be tried without running it locally
 - More aid programs, and pre-screening for which ones a person qualifies for
 - A caseworker view for the food bank receiving the applications
 
