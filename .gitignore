@@ -1,0 +1,10 @@
+# Secrets — never commit these
+.env
+
+# Applicants' answers (personal data)
+sessions.json
+
+# Python
+.venv/
+__pycache__/
+*.pyc

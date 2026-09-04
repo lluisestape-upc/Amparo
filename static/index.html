@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Amparo — apply by voice</title>
+  <link rel="icon" href="/logo.png" />
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f6f7fb; --panel: #fff; --ink: #1a1a2e; --muted: #6b7280;
+      --accent: #3730c4; --accent-soft: #eef2ff; --amber: #f5a524; --ok: #0f9d6b;
+      --line: #e6e8ef; --shadow: 0 10px 40px rgba(20,20,60,.08);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0e0f1a; --panel: #181a2a; --ink: #eceefc; --muted: #9aa0b4;
+        --accent: #8b8bf5; --accent-soft: #23233a; --ok: #34d399;
+        --line: #2a2c40; --shadow: 0 10px 40px rgba(0,0,0,.4);
+      }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+           background: var(--bg); color: var(--ink); line-height: 1.5; min-height: 100vh; }
+    header { display: flex; align-items: center; gap: .7rem; padding: .9rem 1.4rem;
+             border-bottom: 1px solid var(--line); }
+    header img { width: 38px; height: 38px; border-radius: 10px; }
+    header h1 { font-size: 1.15rem; margin: 0; }
+    header p { margin: 0; color: var(--muted); font-size: .85rem; }
+    main { max-width: 1040px; margin: 0 auto; padding: 1.4rem;
+           display: grid; grid-template-columns: 1.1fr .9fr; gap: 1.4rem; }
+    @media (max-width: 820px) { main { grid-template-columns: 1fr; } }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 20px;
+            box-shadow: var(--shadow); padding: 1.6rem; }
+
+    #voicePanel { display: flex; flex-direction: column; align-items: center; text-align: center;
+                  min-height: 420px; justify-content: center; gap: 1.2rem; }
+    #question { font-size: 1.45rem; font-weight: 600; max-width: 28ch; min-height: 2.2em;
+                white-space: pre-line; }
+    /* Amparo herself — the dove reacts so you can see she's alive. */
+    .mascot { width: 132px; height: auto; margin-bottom: -.4rem; transform-origin: 60% 80%; }
+    .mascot.speaking { animation: bob 1.5s ease-in-out infinite; }
+    .mascot.listening { animation: lean 1.9s ease-in-out infinite; }
+    @keyframes bob  { 0%,100% { transform: translateY(0) }
+                      50%     { transform: translateY(-9px) } }
+    @keyframes lean { 0%,100% { transform: rotate(0deg) scale(1) }
+                      50%     { transform: rotate(-5deg) scale(1.05) } }
+    @media (prefers-reduced-motion: reduce) {
+      .mascot.speaking, .mascot.listening, .mic.listening { animation: none; }
+    }
+    #status { color: var(--muted); font-size: .95rem; min-height: 1.4em; }
+    .mic { width: 108px; height: 108px; border-radius: 50%; border: 0; cursor: pointer;
+           background: var(--accent); color: #fff; font-size: 2.4rem; display: grid;
+           place-items: center; transition: transform .15s;
+           box-shadow: 0 8px 30px rgba(55,48,196,.35); }
+    .mic:hover { transform: scale(1.05); }
+    .mic:disabled { opacity: .45; cursor: default; box-shadow: none; }
+    .mic.listening { animation: pulse 1.3s infinite; background: #e5484d; }
+    @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(229,72,77,.5)} 70%{box-shadow:0 0 0 22px rgba(229,72,77,0)} 100%{box-shadow:0 0 0 0 rgba(229,72,77,0)} }
+    .ghost { background: transparent; border: 1px solid var(--line); color: var(--ink);
+             border-radius: 12px; padding: .55rem .8rem; font-size: .95rem; cursor: pointer; }
+    .ghost:hover { background: var(--accent-soft); }
+    select, #typeRow input { font: inherit; padding: .55rem .7rem; border-radius: 12px;
+             border: 1px solid var(--line); background: var(--panel); color: var(--ink); }
+    #typeRow { display: flex; gap: .5rem; width: 100%; max-width: 380px; }
+    #typeRow input { flex: 1; }
+    .hint { color: var(--muted); font-size: .8rem; max-width: 34ch; }
+
+    #formPanel h2 { margin: 0 0 .2rem; font-size: 1.05rem; }
+    #formPanel .sub { color: var(--muted); font-size: .85rem; margin: 0 0 1rem; }
+    .bar { height: 8px; border-radius: 99px; background: var(--line); overflow: hidden; margin-bottom: 1.1rem; }
+    .bar > i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .5s ease; }
+    .field { display: flex; align-items: baseline; gap: .6rem; padding: .7rem 0;
+             border-bottom: 1px dashed var(--line); }
+    .field .label { flex: 0 0 44%; color: var(--muted); font-size: .9rem; }
+    .field .val { flex: 1; font-weight: 600; }
+    .field .val.empty { color: var(--line); font-weight: 400; }
+    .field.active { background: var(--accent-soft); border-radius: 10px;
+                    padding-left: .6rem; margin: 0 -.6rem; }
+    .field .tick { color: var(--ok); opacity: 0; transition: opacity .3s; }
+    .field.filled .tick { opacity: 1; }
+    .privacy { margin-top: 1.1rem; color: var(--muted); font-size: .78rem;
+               border-top: 1px solid var(--line); padding-top: .8rem; }
+
+    .screen { position: fixed; inset: 0; background: var(--bg); display: grid;
+              place-items: center; padding: 1.5rem; z-index: 10; overflow: auto; }
+    .screen .inner { text-align: center; max-width: 470px; }
+    .screen img.mark { width: 84px; height: 84px; border-radius: 20px; }
+    .screen .big { font-size: 2rem; margin: .6rem 0 .4rem; }
+    .screen p { color: var(--muted); }
+    .cta { background: var(--accent); color: #fff; border: 0; border-radius: 14px;
+           padding: .9rem 1.6rem; font-size: 1.1rem; font-weight: 600; cursor: pointer; margin-top: 1rem; }
+    .cta:hover { filter: brightness(1.12); }
+    .row { display: flex; gap: .6rem; justify-content: center; align-items: center;
+           margin-top: 1rem; flex-wrap: wrap; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="/logo.png" alt="" onerror="this.replaceWith(Object.assign(document.createElement('span'),{textContent:'🕊️',style:'font-size:1.6rem'}))" />
+    <div>
+      <h1>Amparo</h1>
+      <p>Apply for help just by talking — in your language.</p>
+    </div>
+  </header>
+
+  <!-- Start -->
+  <div class="screen" id="startScreen">
+    <div class="inner">
+      <img class="mark" src="/dove.png" alt="" style="width:150px;height:auto;border-radius:0" onerror="this.replaceWith(Object.assign(document.createElement('span'),{textContent:'🕊️',style:'font-size:3rem'}))" />
+      <div class="big" id="startTitle">Let's get you food assistance.</div>
+      <p id="startBody">No reading. No forms. I'll ask a few simple questions out
+         loud, you answer in your own words — in any language — and I fill in
+         your application for you.</p>
+      <div class="row">
+        <label for="lang" style="color:var(--muted)">I speak:</label>
+        <select id="lang" title="Optional — I also detect your language automatically">
+          <option value="">Detect automatically</option>
+          <option value="en-US">English</option>
+          <option value="ar-SA">العربية</option>
+          <option value="es-ES">Español</option>
+          <option value="uk-UA">Українська</option>
+          <option value="fr-FR">Français</option>
+        </select>
+      </div>
+      <button class="cta" id="beginBtn">Begin</button>
+      <p class="hint" style="margin:1.2rem auto 0">
+        Your answers stay on this device's session only, are never shared, and
+        are deleted the moment you download your application.
+      </p>
+    </div>
+  </div>
+
+  <!-- Done -->
+  <div class="screen" id="doneScreen" hidden>
+    <div class="inner">
+      <div style="font-size:3rem">✅</div>
+      <div class="big">Your application is ready.</div>
+      <p id="doneMsg">Everything is filled in.</p>
+      <div class="row"><button class="cta" id="downloadBtn">Download my application (PDF)</button></div>
+      <div class="row"><button class="ghost" id="replayDone">🔊 Hear that again</button>
+                       <button class="ghost" id="restartBtn">Start over</button></div>
+      <p class="hint" id="forgetNote" style="margin:1.2rem auto 0"></p>
+    </div>
+  </div>
+
+  <main>
+    <section class="card" id="voicePanel">
+      <img class="mascot" id="mascot" src="/dove.png" alt="Amparo"
+           onerror="this.replaceWith(Object.assign(document.createElement('div'),{id:'mascot',className:'mascot',textContent:'🕊️',style:'font-size:4rem;width:auto'}))" />
+      <div id="question" aria-live="polite" role="status">…</div>
+      <button class="mic" id="mic" aria-label="Tap and speak your answer">🎤</button>
+      <div id="status" role="status" aria-live="polite"></div>
+      <button class="ghost" id="replay" title="Hear the question again">🔊 Repeat</button>
+      <div id="typeRow">
+        <label for="typed" style="position:absolute;left:-9999px">Type instead</label>
+        <input id="typed" placeholder="…or type your answer" autocomplete="off" />
+        <button class="ghost" id="typedSend">Send</button>
+      </div>
+      <p class="hint">You can correct me at any time — just say
+         “no, that's wrong” or “I meant three”.</p>
+    </section>
+
+    <aside class="card" id="formPanel">
+      <h2 id="formTitle">Application</h2>
+      <p class="sub">Filling in as you speak</p>
+      <div class="bar"><i id="progressBar"></i></div>
+      <div id="fields"></div>
+      <p class="privacy">🔒 Answers are kept only for this session and deleted
+         as soon as you download the application.</p>
+    </aside>
+  </main>
+
+  <audio id="voice" hidden></audio>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const questionEl = $("question"), statusEl = $("status"), mic = $("mic");
+    const voice = $("voice"), fieldsEl = $("fields"), progressBar = $("progressBar");
+
+    // Keep the session across reloads so nobody has to start over.
+    let returning = true;
+    let SID = localStorage.getItem("amparo_sid");
+    if (!SID) {
+      SID = "s_" + Math.random().toString(36).slice(2);
+      localStorage.setItem("amparo_sid", SID);
+      returning = false;
+    }
+
+    let lastReply = "", fieldDefs = [], busy = false;
+    let detectedLang = navigator.language || "en-US";
+
+    async function loadForm() {
+      const d = await (await fetch("/api/form")).json();
+      $("formTitle").textContent = d.title;
+      fieldDefs = d.fields;
+      fieldsEl.innerHTML = "";
+      for (const f of d.fields) {
+        const row = document.createElement("div");
+        row.className = "field"; row.id = "f_" + f.id;
+        row.innerHTML = `<span class="label">${f.label}</span>
+          <span class="val empty" id="v_${f.id}">…</span><span class="tick">✓</span>`;
+        fieldsEl.appendChild(row);
+      }
+    }
+
+    function renderAnswers(answers, focus) {
+      let filled = 0;
+      for (const f of fieldDefs) {
+        const row = $("f_" + f.id), val = $("v_" + f.id);
+        row.classList.toggle("active", f.id === focus);
+        if (answers[f.id]) {
+          val.textContent = answers[f.id]; val.classList.remove("empty");
+          row.classList.add("filled"); filled++;
+        } else {
+          val.textContent = "…"; val.classList.add("empty"); row.classList.remove("filled");
+        }
+      }
+      progressBar.style.width = (filled / fieldDefs.length * 100) + "%";
+    }
+
+    async function playTts(text) {
+      if (!text) return;
+      try {
+        const r = await fetch("/api/tts", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text }),
+        });
+        if (!r.ok) return;
+        voice.src = URL.createObjectURL(await r.blob());
+        voice.play().catch(() => {});
+      } catch (e) {}
+    }
+
+    async function step(text) {
+      if (busy) {                       // never swallow a tap silently
+        statusEl.textContent = "One moment — I'm still working on that…";
+        return;
+      }
+      busy = true; mic.disabled = true; statusEl.textContent = "Thinking…";
+      try {
+        const r = await fetch("/api/step", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ session_id: SID, text }),
+        });
+        const d = await r.json();
+        lastReply = d.reply;
+        questionEl.textContent = d.reply;
+        renderAnswers(d.answers, d.field_focus);
+        if (d.lang && !$("lang").value) detectedLang = d.lang;   // follow their language
+        statusEl.textContent = d.done ? "" : "🔊 Speaking… then tap the mic to answer";
+        playTts(d.reply);                                        // errors get spoken too
+        if (d.done) finish(d.reply);
+      } catch (e) {
+        const msg = "I'm sorry, something went wrong. Please tap the microphone and try again.";
+        questionEl.textContent = msg;
+        statusEl.textContent = "";
+        playTts(msg);                                            // never a silent failure
+      } finally {
+        busy = false; mic.disabled = false;
+      }
+    }
+
+    function finish(msg) {
+      $("doneMsg").textContent = msg || "Everything is filled in.";
+      $("doneScreen").hidden = false;
+    }
+
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let rec = null;
+    if (SR) {
+      rec = new SR(); rec.interimResults = false; rec.maxAlternatives = 1;
+      rec.addEventListener("result", (e) => {
+        mic.classList.remove("listening");
+        step(e.results[0][0].transcript);
+      });
+      rec.addEventListener("end", () => { mic.classList.remove("listening"); setMood(""); });
+      rec.addEventListener("error", () => {
+        mic.classList.remove("listening");
+        const msg = "I didn't catch that. Tap the microphone and say it again.";
+        statusEl.textContent = msg;
+        playTts(msg);
+      });
+      mic.addEventListener("click", () => {
+        if (busy) { statusEl.textContent = "One moment…"; return; }
+        voice.pause();                       // barge-in: stop talking and listen
+        rec.lang = $("lang").value || detectedLang;
+        mic.classList.add("listening");
+        setMood("listening");
+        statusEl.textContent = "Listening…";
+        try { rec.start(); } catch (e) {}
+      });
+    } else {
+      mic.hidden = true;
+      statusEl.textContent = "Voice input isn't supported here — you can type below.";
+    }
+
+    // Bring the mascot to life: she bobs while speaking, leans in while listening.
+    const setMood = (mood) => {
+      const m = $("mascot"); if (!m) return;
+      m.classList.toggle("speaking", mood === "speaking");
+      m.classList.toggle("listening", mood === "listening");
+    };
+    voice.addEventListener("play", () => setMood("speaking"));
+    voice.addEventListener("ended", () => setMood(""));
+    voice.addEventListener("pause", () => setMood(""));
+
+    $("replay").addEventListener("click", () => playTts(lastReply));
+    $("replayDone").addEventListener("click", () => playTts(lastReply));
+    $("typedSend").addEventListener("click", () => {
+      const v = $("typed").value.trim(); if (!v) return;
+      $("typed").value = ""; step(v);
+    });
+    $("typed").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); $("typedSend").click(); }
+    });
+
+    if (returning) {
+      $("startTitle").textContent = "Welcome back.";
+      $("startBody").textContent = "I kept your answers safe. We'll carry on right where you left off.";
+      $("beginBtn").textContent = "Continue";
+    }
+
+    $("beginBtn").addEventListener("click", () => {
+      $("startScreen").hidden = true;
+      step(returning ? "__RESUME__" : "");
+    });
+
+    $("restartBtn").addEventListener("click", async () => {
+      await fetch("/api/forget", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_id: SID }),
+      });
+      localStorage.removeItem("amparo_sid");
+      location.reload();
+    });
+
+    $("downloadBtn").addEventListener("click", async () => {
+      const r = await fetch("/api/pdf", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_id: SID }),
+      });
+      const url = URL.createObjectURL(await r.blob());
+      const a = document.createElement("a");
+      a.href = url; a.download = "food_assistance_application.pdf"; a.click();
+
+      // Privacy: once they have their copy, we keep nothing.
+      await fetch("/api/forget", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_id: SID }),
+      });
+      localStorage.removeItem("amparo_sid");
+      $("forgetNote").textContent = "🔒 Downloaded — your answers have now been deleted.";
+    });
+
+    loadForm();
+  </script>
+</body>
+</html>
