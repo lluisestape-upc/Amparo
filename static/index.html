@@ -58,7 +58,12 @@
     .mic.listening { animation: pulse 1.3s infinite; background: #e5484d; }
     @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(229,72,77,.5)} 70%{box-shadow:0 0 0 22px rgba(229,72,77,0)} 100%{box-shadow:0 0 0 0 rgba(229,72,77,0)} }
     .ghost { background: transparent; border: 1px solid var(--line); color: var(--ink);
-             border-radius: 12px; padding: .55rem .8rem; font-size: .95rem; cursor: pointer; }
+             border-radius: 12px; padding: .55rem .8rem; font-size: .95rem; cursor: pointer;
+             display: inline-flex; align-items: center; gap: .45rem; }
+    /* Icons inherit their colour, so they read on the indigo button and in
+       both themes without a second asset. */
+    .icon { width: 1.15em; height: 1.15em; flex: none; }
+    .mic .icon { width: 44px; height: 44px; }
     .ghost:hover { background: var(--accent-soft); }
     select, #typeRow input { font: inherit; padding: .55rem .7rem; border-radius: 12px;
              border: 1px solid var(--line); background: var(--panel); color: var(--ink); }
@@ -139,7 +144,12 @@
       <div class="big">Your application is ready.</div>
       <p id="doneMsg">Everything is filled in.</p>
       <div class="row"><button class="cta" id="downloadBtn">Download my application (PDF)</button></div>
-      <div class="row"><button class="ghost" id="replayDone">🔊 Hear that again</button>
+      <div class="row"><button class="ghost" id="replayDone">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 9v6h4l5 4V5L8 9H4z" /><path d="M16.5 8.5a5 5 0 0 1 0 7" />
+          <path d="M19.5 6a8.5 8.5 0 0 1 0 12" />
+        </svg>Hear that again</button>
                        <button class="ghost" id="restartBtn">Start over</button></div>
       <p class="hint" id="forgetNote" style="margin:1.2rem auto 0"></p>
     </div>
@@ -150,9 +160,20 @@
       <img class="mascot" id="mascot" src="/dove.png" alt="Amparo"
            onerror="this.replaceWith(Object.assign(document.createElement('div'),{id:'mascot',className:'mascot',textContent:'🕊️',style:'font-size:4rem;width:auto'}))" />
       <div id="question" aria-live="polite" role="status">…</div>
-      <button class="mic" id="mic" aria-label="Tap and speak your answer">🎤</button>
+      <button class="mic" id="mic" aria-label="Tap and speak your answer">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="9" y="2" width="6" height="11" rx="3" /><path d="M5 10a7 7 0 0 0 14 0" />
+          <line x1="12" y1="17" x2="12" y2="21" /><line x1="8.5" y1="21" x2="15.5" y2="21" />
+        </svg>
+      </button>
       <div id="status" role="status" aria-live="polite"></div>
-      <button class="ghost" id="replay" title="Hear the question again">🔊 Repeat</button>
+      <button class="ghost" id="replay" title="Hear the question again">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 9v6h4l5 4V5L8 9H4z" /><path d="M16.5 8.5a5 5 0 0 1 0 7" />
+          <path d="M19.5 6a8.5 8.5 0 0 1 0 12" />
+        </svg>Repeat</button>
       <div id="typeRow">
         <label for="typed" style="position:absolute;left:-9999px">Type instead</label>
         <input id="typed" placeholder="…or type your answer" autocomplete="off" />
@@ -249,7 +270,7 @@
         questionEl.textContent = d.reply;
         renderAnswers(d.answers, d.field_focus);
         if (d.lang && !$("lang").value) detectedLang = d.lang;   // follow their language
-        statusEl.textContent = d.done ? "" : "🔊 Speaking… then tap the mic to answer";
+        statusEl.textContent = d.done ? "" : "Speaking… then tap the mic to answer";
         playTts(d.reply);                                        // errors get spoken too
         if (d.done) finish(d.reply);
       } catch (e) {
