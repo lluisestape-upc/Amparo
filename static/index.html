@@ -28,6 +28,11 @@
              border-bottom: 1px solid var(--line); background: var(--bg);
              position: sticky; top: 0; z-index: 30; }
     header img { width: 38px; height: 38px; border-radius: 10px; }
+    /* The whole brand block is the way back to the opening screen. */
+    .home { display: flex; align-items: center; gap: .7rem; background: transparent;
+            border: 0; padding: .3rem .45rem; margin: -.3rem -.45rem; border-radius: 12px;
+            color: inherit; font: inherit; text-align: start; cursor: pointer; }
+    .home:hover { background: var(--accent-soft); }
     .langwrap { margin-inline-start: auto; position: relative; }
     .langmenu { position: absolute; inset-inline-end: 0; top: calc(100% + .4rem);
                 background: var(--panel); border: 1px solid var(--line);
@@ -138,11 +143,13 @@
 </head>
 <body>
   <header>
-    <img src="/logo.png?v=2" alt="" onerror="this.replaceWith(Object.assign(document.createElement('span'),{textContent:'🕊️',style:'font-size:1.6rem'}))" />
-    <div>
-      <h1>Amparo</h1>
-      <p id="tagline">Apply for help just by talking — in your language.</p>
-    </div>
+    <button class="home" id="homeBtn">
+      <img src="/logo.png?v=2" alt="" onerror="this.replaceWith(Object.assign(document.createElement('span'),{textContent:'🕊️',style:'font-size:1.6rem'}))" />
+      <div>
+        <h1>Amparo</h1>
+        <p id="tagline">Apply for help just by talking — in your language.</p>
+      </div>
+    </button>
     <div class="langwrap">
       <button class="ghost" id="langBtn" aria-haspopup="menu" aria-expanded="false"
               aria-label="Change language" title="Change language">
@@ -556,6 +563,19 @@
     });
     $("typed").addEventListener("keydown", (e) => {
       if (e.key === "Enter") { e.preventDefault(); $("typedSend").click(); }
+    });
+
+    // Tapping the logo takes you back to the opening screen. The session is
+    // untouched, so carrying on picks up exactly where you were.
+    $("homeBtn").addEventListener("click", () => {
+      voice.pause();
+      returning = true;                 // there is a conversation to return to
+      applyLang(uiCode);                // so the button now reads "Continue"
+      $("doneScreen").hidden = true;
+      const screen = $("startScreen");
+      screen.classList.remove("leaving");
+      screen.hidden = false;
+      document.querySelector("main").classList.remove("revealed");
     });
 
     $("beginBtn").addEventListener("click", () => {

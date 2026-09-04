@@ -19,7 +19,9 @@ from google.genai import types
 
 from form_schema import FIELDS, FIELD_IDS, FORM_TITLE
 
-MODEL = "gemini-3.6-flash"  # fast + cheap; swap to a -pro model if you want.
+# A "lite" model: fast, and its free tier allows far more requests per day than
+# the flagship models, which matters when every turn of a conversation is a call.
+MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.1-flash-lite")
 
 _client = None
 
@@ -149,6 +151,10 @@ def step(answers: dict, user_text: str) -> dict:
             break
         except Exception as exc:
             last_error = exc
+            # A quota error (429) will not pass on a retry — retrying just burns
+            # three requests instead of one. Only wait out transient failures.
+            if "RESOURCE_EXHAUSTED" in str(exc) or "429" in str(exc):
+                break
             if attempt < 2:
                 time.sleep(1.5 * (attempt + 1))
     if data is None:
