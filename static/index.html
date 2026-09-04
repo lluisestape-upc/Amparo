@@ -25,6 +25,16 @@
     header { display: flex; align-items: center; gap: .7rem; padding: .9rem 1.4rem;
              border-bottom: 1px solid var(--line); }
     header img { width: 38px; height: 38px; border-radius: 10px; }
+    .langwrap { margin-inline-start: auto; position: relative; }
+    .langmenu { position: absolute; inset-inline-end: 0; top: calc(100% + .4rem);
+                background: var(--panel); border: 1px solid var(--line);
+                border-radius: 12px; box-shadow: var(--shadow); padding: .3rem;
+                min-width: 170px; z-index: 20; }
+    .langmenu button { display: block; width: 100%; text-align: start; font: inherit;
+                       background: transparent; border: 0; color: var(--ink);
+                       padding: .55rem .7rem; border-radius: 8px; cursor: pointer; }
+    .langmenu button:hover { background: var(--accent-soft); }
+    .langmenu button[aria-current="true"] { color: var(--accent); font-weight: 600; }
     header h1 { font-size: 1.15rem; margin: 0; }
     header p { margin: 0; color: var(--muted); font-size: .85rem; }
     main { max-width: 1040px; margin: 0 auto; padding: 1.4rem;
@@ -40,15 +50,20 @@
     /* Each language sits on its own line, visually separated. */
     .qline + .qline { padding-top: .5rem; border-top: 1px solid var(--line); }
     /* Amparo herself — the dove reacts so you can see she's alive. */
-    .mascot { width: 132px; height: auto; margin-bottom: -.4rem; transform-origin: 60% 80%; }
+    .mascot { width: 132px; height: auto; margin-bottom: -.4rem; transform-origin: 60% 80%;
+              animation: float 6s ease-in-out infinite; }
     .mascot.speaking { animation: bob 1.5s ease-in-out infinite; }
     .mascot.listening { animation: lean 1.9s ease-in-out infinite; }
-    @keyframes bob  { 0%,100% { transform: translateY(0) }
-                      50%     { transform: translateY(-9px) } }
+    /* Idle: she's always gently alive, never a frozen picture. */
+    @keyframes float { 0%,100% { transform: translateY(0) rotate(0deg) }
+                       30%     { transform: translateY(-6px) rotate(1.6deg) }
+                       65%     { transform: translateY(3px) rotate(-1.6deg) } }
+    @keyframes bob  { 0%,100% { transform: translateY(0) rotate(0deg) }
+                      50%     { transform: translateY(-9px) rotate(-2deg) } }
     @keyframes lean { 0%,100% { transform: rotate(0deg) scale(1) }
                       50%     { transform: rotate(-5deg) scale(1.05) } }
     @media (prefers-reduced-motion: reduce) {
-      .mascot.speaking, .mascot.listening, .mic.listening { animation: none; }
+      .mascot, .mascot.speaking, .mascot.listening, .mic.listening { animation: none; }
     }
     #status { color: var(--muted); font-size: .95rem; min-height: 1.4em; }
     .mic { width: 108px; height: 108px; border-radius: 50%; border: 0; cursor: pointer;
@@ -108,7 +123,18 @@
     <img src="/logo.png" alt="" onerror="this.replaceWith(Object.assign(document.createElement('span'),{textContent:'🕊️',style:'font-size:1.6rem'}))" />
     <div>
       <h1>Amparo</h1>
-      <p>Apply for help just by talking — in your language.</p>
+      <p id="tagline">Apply for help just by talking — in your language.</p>
+    </div>
+    <div class="langwrap">
+      <button class="ghost" id="langBtn" aria-haspopup="menu" aria-expanded="false"
+              aria-label="Change language" title="Change language">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="9" /><path d="M3 12h18" />
+          <path d="M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18z" />
+        </svg><span id="langCode">EN</span>
+      </button>
+      <div class="langmenu" id="langMenu" role="menu" hidden></div>
     </div>
   </header>
 
@@ -120,19 +146,8 @@
       <p id="startBody">No reading. No forms. I'll ask a few simple questions out
          loud, you answer in your own words — in any language — and I fill in
          your application for you.</p>
-      <div class="row">
-        <label for="lang" style="color:var(--muted)">I speak:</label>
-        <select id="lang" title="Optional — I also detect your language automatically">
-          <option value="">Detect automatically</option>
-          <option value="en-US">English</option>
-          <option value="ar-SA">العربية</option>
-          <option value="es-ES">Español</option>
-          <option value="uk-UA">Українська</option>
-          <option value="fr-FR">Français</option>
-        </select>
-      </div>
       <button class="cta" id="beginBtn">Begin</button>
-      <p class="hint" style="margin:1.2rem auto 0">
+      <p class="hint" id="privacyStart" style="margin:1.2rem auto 0">
         Your answers stay on this device's session only, are never shared, and
         are deleted the moment you download your application.
       </p>
@@ -143,7 +158,7 @@
   <div class="screen" id="doneScreen" hidden>
     <div class="inner">
       <div style="font-size:3rem">✅</div>
-      <div class="big">Your application is ready.</div>
+      <div class="big" id="doneTitle">Your application is ready.</div>
       <p id="doneMsg">Everything is filled in.</p>
       <div class="row"><button class="cta" id="downloadBtn">Download my application (PDF)</button></div>
       <div class="row"><button class="ghost" id="replayDone">
@@ -151,7 +166,7 @@
              stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M4 9v6h4l5 4V5L8 9H4z" /><path d="M16.5 8.5a5 5 0 0 1 0 7" />
           <path d="M19.5 6a8.5 8.5 0 0 1 0 12" />
-        </svg>Hear that again</button>
+        </svg><span id="replayDoneLabel">Hear that again</span></button>
                        <button class="ghost" id="restartBtn">Start over</button></div>
       <p class="hint" id="forgetNote" style="margin:1.2rem auto 0"></p>
     </div>
@@ -175,23 +190,23 @@
              stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M4 9v6h4l5 4V5L8 9H4z" /><path d="M16.5 8.5a5 5 0 0 1 0 7" />
           <path d="M19.5 6a8.5 8.5 0 0 1 0 12" />
-        </svg>Repeat</button>
+        </svg><span id="replayLabel">Repeat</span></button>
       <div id="typeRow">
         <label for="typed" style="position:absolute;left:-9999px">Type instead</label>
         <input id="typed" placeholder="…or type your answer" autocomplete="off" />
         <button class="ghost" id="typedSend">Send</button>
       </div>
-      <p class="hint">You can correct me at any time — just say
+      <p class="hint" id="correctHint">You can correct me at any time — just say
          “no, that's wrong” or “I meant three”.</p>
     </section>
 
     <aside class="card" id="formPanel">
       <h2 id="formTitle">Application</h2>
-      <p class="sub">Filling in as you speak</p>
+      <p class="sub" id="fillingSub">Filling in as you speak</p>
       <div class="bar"><i id="progressBar"></i></div>
       <div id="fields"></div>
-      <p class="privacy">🔒 Answers are kept only for this session and deleted
-         as soon as you download the application.</p>
+      <p class="privacy" id="privacyPanel">🔒 Answers are kept only for this session
+         and deleted as soon as you download the application.</p>
     </aside>
   </main>
 
@@ -212,7 +227,177 @@
     }
 
     let lastReply = "", fieldDefs = [], busy = false;
-    let detectedLang = navigator.language || "en-US";
+    let detectedLang = "";                       // language heard in conversation
+
+    // ---- Interface language -------------------------------------------------
+    // The conversation follows whatever the person speaks; this translates the
+    // interface around it, for a sighted person who doesn't read English.
+    const NAMES = { en: "English", es: "Español", ar: "العربية", uk: "Українська", fr: "Français" };
+    const BCP = { en: "en-US", es: "es-ES", ar: "ar-SA", uk: "uk-UA", fr: "fr-FR" };
+    const I18N = {
+      en: { tagline:"Apply for help just by talking — in your language.",
+        startTitle:"Let's get you food assistance.",
+        startBody:"No reading. No forms. I'll ask a few simple questions out loud, you answer in your own words — in any language — and I fill in your application for you.",
+        backTitle:"Welcome back.", backBody:"I kept your answers safe. We'll carry on right where you left off.",
+        begin:"Begin", cont:"Continue",
+        privacyStart:"Your answers stay on this device's session only, are never shared, and are deleted the moment you download your application.",
+        formTitle:"Food Assistance Application", filling:"Filling in as you speak",
+        privacyPanel:"🔒 Answers are kept only for this session and deleted as soon as you download the application.",
+        repeat:"Repeat", send:"Send", typePlaceholder:"…or type your answer",
+        correctHint:"You can correct me at any time — just say “no, that's wrong” or “I meant three”.",
+        micLabel:"Tap and speak your answer", changeLang:"Change language",
+        thinking:"Thinking…", speaking:"Speaking… then tap the mic to answer", listening:"Listening…",
+        moment:"One moment — I'm still working on that…",
+        notCaught:"I didn't catch that. Tap the microphone and say it again.",
+        error:"I'm sorry, something went wrong. Please tap the microphone and try again.",
+        doneTitle:"Your application is ready.", doneBody:"Everything is filled in.",
+        download:"Download my application (PDF)", hearAgain:"Hear that again", startOver:"Start over",
+        forgot:"🔒 Downloaded — your answers have now been deleted.",
+        fields:{ full_name:"Full name", household_size:"People in household", children_count:"Number of children",
+                 monthly_income:"Monthly household income", address:"Home address", dietary_needs:"Allergies or dietary needs" } },
+      es: { tagline:"Pide ayuda solo hablando — en tu idioma.",
+        startTitle:"Vamos a conseguirte ayuda alimentaria.",
+        startBody:"Sin leer. Sin formularios. Te haré unas preguntas sencillas en voz alta, tú respondes con tus palabras — en cualquier idioma — y yo relleno tu solicitud.",
+        backTitle:"Bienvenido de nuevo.", backBody:"Guardé tus respuestas. Seguimos justo donde lo dejaste.",
+        begin:"Empezar", cont:"Continuar",
+        privacyStart:"Tus respuestas se guardan solo en esta sesión, nunca se comparten y se borran en cuanto descargues tu solicitud.",
+        formTitle:"Solicitud de ayuda alimentaria", filling:"Se rellena mientras hablas",
+        privacyPanel:"🔒 Las respuestas se guardan solo en esta sesión y se borran en cuanto descargues la solicitud.",
+        repeat:"Repetir", send:"Enviar", typePlaceholder:"…o escribe tu respuesta",
+        correctHint:"Puedes corregirme en cualquier momento — di “no, eso está mal” o “quise decir tres”.",
+        micLabel:"Toca y di tu respuesta", changeLang:"Cambiar idioma",
+        thinking:"Pensando…", speaking:"Hablando… luego toca el micro para responder", listening:"Escuchando…",
+        moment:"Un momento — todavía estoy con eso…",
+        notCaught:"No te he entendido. Toca el micrófono y repítelo.",
+        error:"Lo siento, algo ha fallado. Toca el micrófono e inténtalo otra vez.",
+        doneTitle:"Tu solicitud está lista.", doneBody:"Está todo relleno.",
+        download:"Descargar mi solicitud (PDF)", hearAgain:"Escuchar otra vez", startOver:"Empezar de nuevo",
+        forgot:"🔒 Descargada — tus respuestas ya se han borrado.",
+        fields:{ full_name:"Nombre completo", household_size:"Personas en el hogar", children_count:"Número de niños",
+                 monthly_income:"Ingresos mensuales del hogar", address:"Dirección", dietary_needs:"Alergias o necesidades alimentarias" } },
+      ar: { tagline:"اطلب المساعدة بالحديث فقط — بلغتك.",
+        startTitle:"لنحصل لك على المساعدة الغذائية.",
+        startBody:"بدون قراءة. بدون استمارات. سأطرح عليك أسئلة بسيطة بصوت عالٍ، وتجيب بكلماتك — بأي لغة — وأملأ لك الطلب.",
+        backTitle:"أهلاً بعودتك.", backBody:"احتفظت بإجاباتك. سنكمل من حيث توقفت.",
+        begin:"ابدأ", cont:"متابعة",
+        privacyStart:"تبقى إجاباتك في هذه الجلسة فقط، ولا تُشارك أبداً، وتُحذف فور تنزيل طلبك.",
+        formTitle:"طلب المساعدة الغذائية", filling:"يُملأ أثناء حديثك",
+        privacyPanel:"🔒 تُحفظ الإجابات لهذه الجلسة فقط وتُحذف فور تنزيل الطلب.",
+        repeat:"إعادة", send:"إرسال", typePlaceholder:"…أو اكتب إجابتك",
+        correctHint:"يمكنك تصحيحي في أي وقت — قل «لا، هذا خطأ» أو «قصدت ثلاثة».",
+        micLabel:"اضغط وقل إجابتك", changeLang:"تغيير اللغة",
+        thinking:"جارٍ التفكير…", speaking:"أتحدث… ثم اضغط الميكروفون للإجابة", listening:"أستمع…",
+        moment:"لحظة — ما زلت أعمل على ذلك…",
+        notCaught:"لم أسمع ذلك. اضغط الميكروفون وأعد المحاولة.",
+        error:"عذراً، حدث خطأ ما. اضغط الميكروفون وحاول مرة أخرى.",
+        doneTitle:"طلبك جاهز.", doneBody:"تم ملء كل شيء.",
+        download:"تنزيل طلبي (PDF)", hearAgain:"استمع مرة أخرى", startOver:"البدء من جديد",
+        forgot:"🔒 تم التنزيل — حُذفت إجاباتك الآن.",
+        fields:{ full_name:"الاسم الكامل", household_size:"عدد أفراد الأسرة", children_count:"عدد الأطفال",
+                 monthly_income:"دخل الأسرة الشهري", address:"عنوان السكن", dietary_needs:"الحساسية أو الاحتياجات الغذائية" } },
+      uk: { tagline:"Попросіть допомогу просто говорячи — вашою мовою.",
+        startTitle:"Допоможемо вам отримати продуктову допомогу.",
+        startBody:"Без читання. Без анкет. Я поставлю кілька простих запитань уголос, ви відповідаєте своїми словами — будь-якою мовою — а я заповнюю вашу заяву.",
+        backTitle:"З поверненням.", backBody:"Я зберегла ваші відповіді. Продовжимо з того місця, де ви зупинилися.",
+        begin:"Почати", cont:"Продовжити",
+        privacyStart:"Ваші відповіді зберігаються лише в цій сесії, ніколи не передаються і видаляються щойно ви завантажите заяву.",
+        formTitle:"Заява на продуктову допомогу", filling:"Заповнюється, поки ви говорите",
+        privacyPanel:"🔒 Відповіді зберігаються лише для цієї сесії та видаляються після завантаження заяви.",
+        repeat:"Повторити", send:"Надіслати", typePlaceholder:"…або напишіть відповідь",
+        correctHint:"Ви можете виправити мене будь-коли — скажіть «ні, це неправильно» або «я мав на увазі три».",
+        micLabel:"Натисніть і скажіть відповідь", changeLang:"Змінити мову",
+        thinking:"Думаю…", speaking:"Говорю… потім натисніть мікрофон", listening:"Слухаю…",
+        moment:"Хвилинку — я ще працюю над цим…",
+        notCaught:"Я не розчула. Натисніть мікрофон і повторіть.",
+        error:"Вибачте, щось пішло не так. Натисніть мікрофон і спробуйте ще раз.",
+        doneTitle:"Ваша заява готова.", doneBody:"Усе заповнено.",
+        download:"Завантажити заяву (PDF)", hearAgain:"Прослухати ще раз", startOver:"Почати спочатку",
+        forgot:"🔒 Завантажено — ваші відповіді видалено.",
+        fields:{ full_name:"Повне ім'я", household_size:"Осіб у домогосподарстві", children_count:"Кількість дітей",
+                 monthly_income:"Місячний дохід родини", address:"Домашня адреса", dietary_needs:"Алергії або дієтичні потреби" } },
+      fr: { tagline:"Demandez de l'aide rien qu'en parlant — dans votre langue.",
+        startTitle:"Obtenons votre aide alimentaire.",
+        startBody:"Aucune lecture. Aucun formulaire. Je pose quelques questions simples à voix haute, vous répondez avec vos mots — dans n'importe quelle langue — et je remplis votre demande.",
+        backTitle:"Bon retour.", backBody:"J'ai gardé vos réponses. Nous reprenons là où vous vous étiez arrêté.",
+        begin:"Commencer", cont:"Continuer",
+        privacyStart:"Vos réponses restent uniquement dans cette session, ne sont jamais partagées et sont supprimées dès que vous téléchargez votre demande.",
+        formTitle:"Demande d'aide alimentaire", filling:"Se remplit pendant que vous parlez",
+        privacyPanel:"🔒 Les réponses sont conservées pour cette session seulement et supprimées dès le téléchargement.",
+        repeat:"Répéter", send:"Envoyer", typePlaceholder:"…ou écrivez votre réponse",
+        correctHint:"Vous pouvez me corriger à tout moment — dites « non, c'est faux » ou « je voulais dire trois ».",
+        micLabel:"Appuyez et dites votre réponse", changeLang:"Changer de langue",
+        thinking:"Je réfléchis…", speaking:"Je parle… puis appuyez sur le micro", listening:"J'écoute…",
+        moment:"Un instant — j'y travaille encore…",
+        notCaught:"Je n'ai pas entendu. Appuyez sur le micro et répétez.",
+        error:"Désolée, une erreur est survenue. Appuyez sur le micro et réessayez.",
+        doneTitle:"Votre demande est prête.", doneBody:"Tout est rempli.",
+        download:"Télécharger ma demande (PDF)", hearAgain:"Réécouter", startOver:"Recommencer",
+        forgot:"🔒 Téléchargée — vos réponses ont été supprimées.",
+        fields:{ full_name:"Nom complet", household_size:"Personnes dans le foyer", children_count:"Nombre d'enfants",
+                 monthly_income:"Revenu mensuel du foyer", address:"Adresse", dietary_needs:"Allergies ou besoins alimentaires" } },
+    };
+
+    let uiCode = localStorage.getItem("amparo_lang")
+              || (Object.keys(I18N).find(c => (navigator.language || "").startsWith(c)) || "en");
+    let uiLang = BCP[uiCode];
+    const T = (k) => (I18N[uiCode] || I18N.en)[k];
+
+    function applyLang(code) {
+      uiCode = I18N[code] ? code : "en";
+      uiLang = BCP[uiCode];
+      localStorage.setItem("amparo_lang", uiCode);
+      document.documentElement.lang = uiCode;
+      document.documentElement.dir = uiCode === "ar" ? "rtl" : "ltr";
+      $("langCode").textContent = uiCode.toUpperCase();
+      $("langBtn").setAttribute("aria-label", T("changeLang"));
+      $("langBtn").title = T("changeLang");
+
+      $("tagline").textContent = T("tagline");
+      $("startTitle").textContent = returning ? T("backTitle") : T("startTitle");
+      $("startBody").textContent = returning ? T("backBody") : T("startBody");
+      $("beginBtn").textContent = returning ? T("cont") : T("begin");
+      $("privacyStart").textContent = T("privacyStart");
+      $("formTitle").textContent = T("formTitle");
+      $("fillingSub").textContent = T("filling");
+      $("privacyPanel").textContent = T("privacyPanel");
+      $("replayLabel").textContent = T("repeat");
+      $("typedSend").textContent = T("send");
+      $("typed").placeholder = T("typePlaceholder");
+      $("correctHint").textContent = T("correctHint");
+      mic.setAttribute("aria-label", T("micLabel"));
+      $("doneTitle").textContent = T("doneTitle");
+      $("downloadBtn").textContent = T("download");
+      $("replayDoneLabel").textContent = T("hearAgain");
+      $("restartBtn").textContent = T("startOver");
+      for (const f of fieldDefs) {
+        const el = $("l_" + f.id);
+        if (el) el.textContent = T("fields")[f.id] || f.label;
+      }
+      for (const b of $("langMenu").querySelectorAll("button")) {
+        b.setAttribute("aria-current", String(b.dataset.code === uiCode));
+      }
+    }
+
+    (function buildLangMenu() {
+      const menu = $("langMenu");
+      for (const [code, name] of Object.entries(NAMES)) {
+        const b = document.createElement("button");
+        b.type = "button"; b.dataset.code = code; b.textContent = name;
+        b.setAttribute("role", "menuitem");
+        b.addEventListener("click", () => { applyLang(code); toggleMenu(false); });
+        menu.appendChild(b);
+      }
+    })();
+
+    function toggleMenu(open) {
+      const menu = $("langMenu");
+      const show = open === undefined ? menu.hidden : open;
+      menu.hidden = !show;
+      $("langBtn").setAttribute("aria-expanded", String(show));
+    }
+    $("langBtn").addEventListener("click", (e) => { e.stopPropagation(); toggleMenu(); });
+    document.addEventListener("click", () => toggleMenu(false));
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") toggleMenu(false); });
 
     async function loadForm() {
       const d = await (await fetch("/api/form")).json();
@@ -222,10 +407,11 @@
       for (const f of d.fields) {
         const row = document.createElement("div");
         row.className = "field"; row.id = "f_" + f.id;
-        row.innerHTML = `<span class="label">${f.label}</span>
+        row.innerHTML = `<span class="label" id="l_${f.id}">${f.label}</span>
           <span class="val empty" id="v_${f.id}">…</span><span class="tick">✓</span>`;
         fieldsEl.appendChild(row);
       }
+      applyLang(uiCode);          // labels arrive in English; translate them
     }
 
     function renderAnswers(answers, focus) {
@@ -272,10 +458,10 @@
 
     async function step(text) {
       if (busy) {                       // never swallow a tap silently
-        statusEl.textContent = "One moment — I'm still working on that…";
+        statusEl.textContent = T("moment");
         return;
       }
-      busy = true; mic.disabled = true; statusEl.textContent = "Thinking…";
+      busy = true; mic.disabled = true; statusEl.textContent = T("thinking");
       try {
         const r = await fetch("/api/step", {
           method: "POST", headers: { "Content-Type": "application/json" },
@@ -285,12 +471,12 @@
         lastReply = d.reply;
         showQuestion(d.reply);
         renderAnswers(d.answers, d.field_focus);
-        if (d.lang && !$("lang").value) detectedLang = d.lang;   // follow their language
-        statusEl.textContent = d.done ? "" : "Speaking… then tap the mic to answer";
+        if (d.lang) detectedLang = d.lang;                       // follow their language
+        statusEl.textContent = d.done ? "" : T("speaking");
         playTts(d.reply);                                        // errors get spoken too
         if (d.done) finish(d.reply);
       } catch (e) {
-        const msg = "I'm sorry, something went wrong. Please tap the microphone and try again.";
+        const msg = T("error");
         showQuestion(msg);
         statusEl.textContent = "";
         playTts(msg);                                            // never a silent failure
@@ -300,7 +486,7 @@
     }
 
     function finish(msg) {
-      $("doneMsg").textContent = msg || "Everything is filled in.";
+      $("doneMsg").textContent = msg || T("doneBody");
       $("doneScreen").hidden = false;
     }
 
@@ -315,17 +501,17 @@
       rec.addEventListener("end", () => { mic.classList.remove("listening"); setMood(""); });
       rec.addEventListener("error", () => {
         mic.classList.remove("listening");
-        const msg = "I didn't catch that. Tap the microphone and say it again.";
+        const msg = T("notCaught");
         statusEl.textContent = msg;
         playTts(msg);
       });
       mic.addEventListener("click", () => {
-        if (busy) { statusEl.textContent = "One moment…"; return; }
+        if (busy) { statusEl.textContent = T("moment"); return; }
         voice.pause();                       // barge-in: stop talking and listen
-        rec.lang = $("lang").value || detectedLang;
+        rec.lang = detectedLang || uiLang;   // follow the conversation, else the UI
         mic.classList.add("listening");
         setMood("listening");
-        statusEl.textContent = "Listening…";
+        statusEl.textContent = T("listening");
         try { rec.start(); } catch (e) {}
       });
     } else {
@@ -352,12 +538,6 @@
     $("typed").addEventListener("keydown", (e) => {
       if (e.key === "Enter") { e.preventDefault(); $("typedSend").click(); }
     });
-
-    if (returning) {
-      $("startTitle").textContent = "Welcome back.";
-      $("startBody").textContent = "I kept your answers safe. We'll carry on right where you left off.";
-      $("beginBtn").textContent = "Continue";
-    }
 
     $("beginBtn").addEventListener("click", () => {
       $("startScreen").hidden = true;
@@ -388,9 +568,10 @@
         body: JSON.stringify({ session_id: SID }),
       });
       localStorage.removeItem("amparo_sid");
-      $("forgetNote").textContent = "🔒 Downloaded — your answers have now been deleted.";
+      $("forgetNote").textContent = T("forgot");
     });
 
+    applyLang(uiCode);          // translate the shell before anything loads
     loadForm();
   </script>
 </body>
