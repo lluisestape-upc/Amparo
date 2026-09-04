@@ -46,6 +46,15 @@ def icon(src: Path, dst: Path):
     print(f"{dst.name}: {im.size}")
 
 
+def whiten(src: Path, dst: Path):
+    """A white silhouette of the mascot, for the PDF's dark header band."""
+    im = Image.open(src).convert("RGBA")
+    im.putdata([(255, 255, 255, a) for (_, _, _, a) in im.getdata()])
+    im.save(dst)
+    print(f"{dst.name}: {im.size}")
+
+
 OUT.mkdir(exist_ok=True)
 icon(HAND, OUT / "logo.png")
 transparent(DOVE, OUT / "dove.png")
+whiten(OUT / "dove.png", OUT / "dove_white.png")

@@ -16,6 +16,7 @@ in localStorage. Answers are deleted as soon as the PDF is downloaded.
 import io
 import json
 import os
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -34,18 +35,48 @@ app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 
 STORE = Path(__file__).with_name("sessions.json")
 
+# Answers include income and home address. We promise they are deleted when the
+# application is downloaded — but people also abandon halfway, and that data
+# must not sit on disk forever. Anything untouched for this long is dropped.
+SESSION_TTL = timedelta(hours=1)
+
 
 def _load() -> dict:
-    if STORE.exists():
+    """Read the store, discarding anything past its time to live."""
+    if not STORE.exists():
+        return {}
+    try:
+        raw = json.loads(STORE.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+    cutoff = datetime.now(timezone.utc) - SESSION_TTL
+    kept, expired = {}, 0
+    for sid, entry in raw.items():
         try:
-            return json.loads(STORE.read_text(encoding="utf-8"))
+            if datetime.fromisoformat(entry["updated"]) > cutoff:
+                kept[sid] = entry
+            else:
+                expired += 1
         except Exception:
-            return {}
-    return {}
+            expired += 1                     # malformed or pre-TTL entry
+    if expired:
+        app.logger.info("Discarded %d expired session(s)", expired)
+        _write(kept)
+    return kept
 
 
-def _save(sessions: dict) -> None:
+def _write(sessions: dict) -> None:
     STORE.write_text(json.dumps(sessions, ensure_ascii=False), encoding="utf-8")
+
+
+def _answers(sessions: dict, sid: str) -> dict:
+    return sessions.get(sid, {}).get("answers", {})
+
+
+def _remember(sessions: dict, sid: str, answers: dict) -> None:
+    sessions[sid] = {"answers": answers, "updated": datetime.now(timezone.utc).isoformat()}
+    _write(sessions)
 
 
 @app.get("/")
@@ -70,7 +101,7 @@ def api_step():
     text = body.get("text", "")
 
     sessions = _load()
-    answers = sessions.get(sid, {})
+    answers = _answers(sessions, sid)
 
     try:
         result = brain.step(answers, text)
@@ -93,8 +124,7 @@ def api_step():
     # The brain returns the complete state, so a corrected value replaces the
     # old one. Fields it omits keep whatever we already had.
     answers.update(result["answers"])
-    sessions[sid] = answers
-    _save(sessions)
+    _remember(sessions, sid, answers)
 
     return jsonify(
         {
@@ -125,7 +155,7 @@ def api_tts():
 @app.post("/api/pdf")
 def api_pdf():
     sid = request.get_json(force=True).get("session_id", "default")
-    answers = _load().get(sid, {})
+    answers = _answers(_load(), sid)
     return send_file(
         io.BytesIO(build_pdf(answers)),
         mimetype="application/pdf",
@@ -140,7 +170,7 @@ def api_forget():
     sid = request.get_json(force=True).get("session_id", "default")
     sessions = _load()
     if sessions.pop(sid, None) is not None:
-        _save(sessions)
+        _write(sessions)
     return jsonify({"forgotten": True})
 
 
