@@ -29,6 +29,8 @@ from pdf_fill import build_pdf
 load_dotenv()
 
 app = Flask(__name__, static_folder="static", static_url_path="")
+# Don't let a browser hold on to stale art or an old page between edits.
+app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 
 STORE = Path(__file__).with_name("sessions.json")
 
