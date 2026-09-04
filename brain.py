@@ -93,11 +93,16 @@ Valid field ids: {FIELD_IDS}."""
 # the language selector can simply answer in their own language.
 FIRST_TURN = (
     "This is the very start. The person has not spoken yet and you do not know "
-    "their language. Say ONE very short line in English, then the same line in "
-    "Spanish and in Arabic: that you will help them apply for food assistance "
-    "and they may answer in their own language. Then ask, in English only, for "
-    'their name. Keep the whole reply under 45 words. Set "lang" to "en-US" '
-    'and "field_focus" to "full_name".'
+    "their language. Say ONE very short line — that you will help them apply "
+    "for food assistance and they may answer in their own language — in "
+    "English, then Spanish, then Arabic. Finally ask, in English only, for "
+    "their name.\n"
+    "FORMAT: put each language on its OWN LINE, separated by a real newline "
+    "character (\\n). The English question goes on a final separate line. "
+    "Never run two languages together on one line. Example shape:\n"
+    "<english line>\\n<spanish line>\\n<arabic line>\\n<english question>\n"
+    'Keep the whole reply under 45 words. Set "lang" to "en-US" and '
+    '"field_focus" to "full_name".'
 )
 
 

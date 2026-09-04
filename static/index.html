@@ -36,7 +36,9 @@
     #voicePanel { display: flex; flex-direction: column; align-items: center; text-align: center;
                   min-height: 420px; justify-content: center; gap: 1.2rem; }
     #question { font-size: 1.45rem; font-weight: 600; max-width: 28ch; min-height: 2.2em;
-                white-space: pre-line; }
+                display: flex; flex-direction: column; gap: .5rem; }
+    /* Each language sits on its own line, visually separated. */
+    .qline + .qline { padding-top: .5rem; border-top: 1px solid var(--line); }
     /* Amparo herself — the dove reacts so you can see she's alive. */
     .mascot { width: 132px; height: auto; margin-bottom: -.4rem; transform-origin: 60% 80%; }
     .mascot.speaking { animation: bob 1.5s ease-in-out infinite; }
@@ -241,6 +243,20 @@
       progressBar.style.width = (filled / fieldDefs.length * 100) + "%";
     }
 
+    // One line per language, each with its own direction so Arabic and other
+    // right-to-left scripts lay out correctly next to Latin ones.
+    function showQuestion(text) {
+      questionEl.innerHTML = "";
+      for (const line of String(text).split("\n")) {
+        if (!line.trim()) continue;
+        const div = document.createElement("div");
+        div.dir = "auto";
+        div.className = "qline";
+        div.textContent = line.trim();
+        questionEl.appendChild(div);
+      }
+    }
+
     async function playTts(text) {
       if (!text) return;
       try {
@@ -267,7 +283,7 @@
         });
         const d = await r.json();
         lastReply = d.reply;
-        questionEl.textContent = d.reply;
+        showQuestion(d.reply);
         renderAnswers(d.answers, d.field_focus);
         if (d.lang && !$("lang").value) detectedLang = d.lang;   // follow their language
         statusEl.textContent = d.done ? "" : "Speaking… then tap the mic to answer";
@@ -275,7 +291,7 @@
         if (d.done) finish(d.reply);
       } catch (e) {
         const msg = "I'm sorry, something went wrong. Please tap the microphone and try again.";
-        questionEl.textContent = msg;
+        showQuestion(msg);
         statusEl.textContent = "";
         playTts(msg);                                            // never a silent failure
       } finally {
