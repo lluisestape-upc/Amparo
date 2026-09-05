@@ -9,7 +9,7 @@ tags: weekendchallenge, ai, accessibility, gemini
 ## What I Built
 
 Every year an enormous amount of aid money goes unclaimed. Not because it runs
-out, and not because nobody needs it — but because of something much stupider.
+out, and not because nobody needs it, but because of something much stupider.
 
 **The form is the wall.**
 
@@ -37,7 +37,7 @@ children**, and moves on. It does the paperwork thinking so the person doesn't
 have to.
 
 You can also correct it at any time, about any field, however long ago you
-answered — *"no, I said three, not four"* — and it fixes that value and carries
+answered. Say *"no, I said three, not four"* and it fixes that value and carries
 on. That mattered more than I expected. A voice interface without a correction
 path is a trap, because you cannot see what it wrote down.
 
@@ -45,9 +45,9 @@ path is a trap, because you cannot see what it wrote down.
 
 <!-- TODO: embed the 90-second demo video -->
 
-<!-- TODO: screenshot — conversation on the left, form filling itself on the right -->
+<!-- TODO: screenshot: conversation on the left, form filling itself on the right -->
 
-<!-- TODO: screenshot — the completed PDF -->
+<!-- TODO: screenshot: the completed PDF -->
 
 The moment worth watching: one messy spoken sentence, and three fields fill
 themselves in on the right.
@@ -56,16 +56,16 @@ themselves in on the right.
 
 {% embed https://github.com/lluisestape-upc/Amparo %}
 
-MIT licensed. `form_schema.py` defines the one form being filled — swap the
-fields there and the whole app targets a different aid program without another
-line changing.
+MIT licensed. `form_schema.py` defines the one form being filled. Swap the fields
+there and the whole app targets a different aid program without another line
+changing.
 
 ## How I Built It
 
 Two models, each doing what it is genuinely good at, behind a Flask backend and
 a single accessible HTML page.
 
-**Google Gemini is the brain.** It is not transcribing — it is conducting an
+**Google Gemini is the brain.** It is not transcribing. It is conducting an
 interview. It reads the blank form, decides what to ask next one field at a time,
 and pulls structured values out of unstructured human speech. Every turn it
 returns strict JSON: the complete state of the form, what to say next, and which
@@ -73,14 +73,14 @@ language the person is speaking.
 
 Returning the *whole* form state rather than a diff is the decision that made
 corrections work. My first version returned only the fields learned that turn,
-and corrections silently failed — the model kept its earlier answer. Sending back
-the full state each turn removed the ambiguity entirely: a corrected value simply
-replaces the old one.
+and corrections silently failed: the model kept its earlier answer. Sending back
+the full state each turn removed the ambiguity entirely, because a corrected
+value simply replaces the old one.
 
 **ElevenLabs is the voice.** `eleven_multilingual_v2` speaks every question in a
 warm human voice, in whatever language Gemini detected. The opening greeting is
 spoken in several languages at once, so there is no language menu to read before
-you can begin — you just answer in yours, and everything follows from there.
+you can begin. You just answer in yours, and everything follows from there.
 
 ### The decisions I would defend
 
@@ -89,7 +89,7 @@ you can begin — you just answer in yours, and everything follows from there.
 - **Errors are spoken, never silent text.** An accessibility tool that reports
   its failures in writing has failed twice.
 - **When the browser cannot understand you, Gemini listens instead.** Browser
-  speech recognition is weakest on accented and hesitant speech — precisely the
+  speech recognition is weakest on accented and hesitant speech, precisely the
   people this is for, which is an awkward gap for an accessibility product. So
   every answer is recorded alongside it, and when it gives up, the audio goes to
   Gemini, which transcribes it directly and answers in the same call. Recordings
@@ -99,7 +99,7 @@ you can begin — you just answer in yours, and everything follows from there.
   complete, the applicant's own address finds the nearest real food bank, which
   is spoken aloud and printed on the form. Those places come from OpenStreetMap,
   never from the model. I could have asked Gemini for nearby food banks and it
-  would happily have answered — but sending someone who is already struggling to
+  would happily have answered, but sending someone who is already struggling to
   an address a model invented is worse than telling them nothing. When nothing is
   found, nothing is claimed.
 - **Nothing is kept.** Answers include income and home address. They are deleted
@@ -115,12 +115,12 @@ only half accessible.
 
 ## Prize Categories
 
-**Best Use of Google AI** — Gemini runs the entire conversation: choosing
+**Best Use of Google AI.** Gemini runs the entire conversation: choosing
 questions, extracting structured data from natural speech, detecting the
 language, applying corrections to any earlier field, and transcribing the audio
 itself when the browser's recognition fails.
 
-**Best Use of ElevenLabs** — every word the app speaks, multilingual, including
+**Best Use of ElevenLabs.** Every word the app speaks, multilingual, including
 the opening greeting that lets someone choose their language without reading
 anything at all.
 

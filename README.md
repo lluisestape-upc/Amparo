@@ -1,6 +1,6 @@
-# 🕊️ Amparo
+# Amparo
 
-**Apply for aid entirely by talking — in your own language.**
+**Apply for aid entirely by talking, in your own language.**
 
 Billions in aid go unclaimed every year, and one of the reasons is painfully
 simple: the form itself is the wall. If you are blind, if you don't read well,
@@ -9,9 +9,9 @@ entitled to is out of reach.
 
 Amparo removes the form. It asks you a few simple questions out loud, you
 answer in your own words in whatever language you speak, and it fills in a real
-aid application for you — then hands you the completed PDF.
+aid application for you, then hands you the completed PDF.
 
-Built for the [DEV Weekend Challenge: Generosity Edition](https://dev.to/events/challenges/weekend-2026-09-03).
+Built for the [DEV Weekend Challenge: Generosity Edition](https://dev.to/challenges/weekend-2026-09-03).
 
 ---
 
@@ -23,10 +23,10 @@ Built for the [DEV Weekend Challenge: Generosity Edition](https://dev.to/events/
         └────────  ElevenLabs (the voice)  ◄────┘
 ```
 
-1. **Gemini 3.6 Flash** reads the blank form, asks about one field at a time in
-   simple, kind words, and understands messy human answers. Say *"we're me, my
-   mum and two little kids"* and it fills `household_size = 4` and
-   `children_count = 2` without asking you to do the arithmetic.
+1. **Gemini** reads the blank form, asks about one field at a time in simple,
+   kind words, and understands messy human answers. Say *"we're me, my mum and
+   two little kids"* and it fills `household_size = 4` and `children_count = 2`
+   without asking you to do the arithmetic.
 2. **ElevenLabs** (`eleven_multilingual_v2`) speaks every question in a warm
    human voice, in whatever language you're speaking.
 3. The form fills in **live on screen** as you talk, and you download the
@@ -35,21 +35,21 @@ Built for the [DEV Weekend Challenge: Generosity Edition](https://dev.to/events/
 ## What makes it usable by the people it's for
 
 - **No reading required anywhere.** The first greeting is spoken in several
-  languages, so you simply answer in yours — there is no language menu to read.
+  languages, so you simply answer in yours. There is no language menu to read.
 - **It reads back what it heard.** Every value is confirmed out loud, because
   the person can't see the screen.
 - **You can correct it at any time.** Say *"no, I said three, not four"* about
   any field, however long ago you answered it. The person is always right.
 - **When the browser can't understand you, Gemini listens instead.** Browser
-  speech recognition is weakest on accents and hesitant speech — exactly the
-  people this is for — so every answer is recorded alongside it, and if it
+  speech recognition is weakest on accents and hesitant speech, which is exactly
+  the people this is for. So every answer is recorded alongside it, and if it
   gives up the audio goes to Gemini, which transcribes it directly.
 - **Errors are spoken, never silent text.** A tool for people who can't read
   must not report failures in writing.
 - **It tells you where to take it.** When the form is done, the applicant's own
   address is used to find the nearest real food bank, spoken aloud and printed
   on the form. Those places come from OpenStreetMap, never from the language
-  model — sending someone to an address a model invented would be worse than
+  model. Sending someone to an address a model invented would be worse than
   saying nothing, so when nothing is found, nothing is claimed.
 - **Interrupt freely.** Tap the mic while it's talking and it stops to listen.
 - **You never lose your place.** Answers survive a page reload or a dropped
@@ -59,10 +59,10 @@ Built for the [DEV Weekend Challenge: Generosity Edition](https://dev.to/events/
 
 ## Privacy
 
-Answers include income and home address, so: nothing is sent anywhere except
-to the language models needed to process the answer, data is kept only for the
-duration of the session, and **everything is deleted the moment the applicant
-downloads their PDF**.
+Answers include income and home address. Nothing is sent anywhere except to the
+language models needed to process the answer, data is kept only for the duration
+of the session, **everything is deleted the moment the applicant downloads their
+PDF**, and abandoned sessions expire within the hour.
 
 ## Run it
 
@@ -77,14 +77,16 @@ Open <http://127.0.0.1:5000> in Chrome (the microphone needs Chrome + localhost)
 
 You'll need a free [Gemini API key](https://aistudio.google.com/apikey) and an
 [ElevenLabs API key](https://elevenlabs.io) with the *Text to Speech* scope.
+Set `GEMINI_MODEL` in `.env` to use a different model than the default.
 
 ## Project layout
 
 | File | What it does |
 |---|---|
-| `form_schema.py` | The one form being filled (a food-bank intake). Swap fields here to target a different aid program — nothing else changes. |
+| `form_schema.py` | The one form being filled (a food-bank intake). Swap fields here to target a different aid program and nothing else changes. |
 | `brain.py` | Gemini conversation logic. Returns strict JSON: the complete form state, what to say next, the detected language. |
 | `tts.py` | ElevenLabs text-to-speech. |
+| `nearby.py` | Finds the nearest real food bank from OpenStreetMap. |
 | `pdf_fill.py` | Renders the answers into the completed PDF. |
 | `app.py` | Flask server and API. |
 | `static/index.html` | The accessible, voice-first interface. |
@@ -97,4 +99,4 @@ You'll need a free [Gemini API key](https://aistudio.google.com/apikey) and an
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE).
