@@ -23,6 +23,7 @@ from dotenv import load_dotenv
 from flask import Flask, jsonify, request, send_file, send_from_directory
 
 import brain
+import nearby
 import tts
 from form_schema import FIELDS, FIELD_IDS, FORM_TITLE
 from pdf_fill import build_pdf
@@ -74,8 +75,11 @@ def _answers(sessions: dict, sid: str) -> dict:
     return sessions.get(sid, {}).get("answers", {})
 
 
-def _remember(sessions: dict, sid: str, answers: dict) -> None:
-    sessions[sid] = {"answers": answers, "updated": datetime.now(timezone.utc).isoformat()}
+def _remember(sessions: dict, sid: str, answers: dict, place: dict | None = None) -> None:
+    entry = {"answers": answers, "updated": datetime.now(timezone.utc).isoformat()}
+    # Keep a found place so the PDF can print it without looking it up again.
+    entry["place"] = place or sessions.get(sid, {}).get("place")
+    sessions[sid] = entry
     _write(sessions)
 
 
@@ -142,7 +146,14 @@ def _advance(sid: str, text: str, audio: bytes | None = None,
     # The brain returns the complete state, so a corrected value replaces the
     # old one. Fields it omits keep whatever we already had.
     answers.update(result["answers"])
-    _remember(sessions, sid, answers)
+
+    # Once the form is complete, tell them where to actually take it. The place
+    # comes from OpenStreetMap, never from the model.
+    place = None
+    if result["done"] and answers.get("address"):
+        place = nearby.nearest(answers["address"])
+
+    _remember(sessions, sid, answers, place)
 
     return jsonify(
         {
@@ -151,6 +162,7 @@ def _advance(sid: str, text: str, audio: bytes | None = None,
             "field_focus": result["field_focus"],
             "lang": result["lang"],
             "heard": result["heard"],
+            "place": place,
             "done": result["done"],
             "error": False,
             "total_fields": len(FIELD_IDS),
@@ -174,9 +186,9 @@ def api_tts():
 @app.post("/api/pdf")
 def api_pdf():
     sid = request.get_json(force=True).get("session_id", "default")
-    answers = _answers(_load(), sid)
+    sessions = _load()
     return send_file(
-        io.BytesIO(build_pdf(answers)),
+        io.BytesIO(build_pdf(_answers(sessions, sid), sessions.get(sid, {}).get("place"))),
         mimetype="application/pdf",
         as_attachment=True,
         download_name="food_assistance_application.pdf",

@@ -136,6 +136,13 @@
     .cta { background: var(--accent); color: #fff; border: 0; border-radius: 14px;
            padding: .9rem 1.6rem; font-size: 1.1rem; font-weight: 600; cursor: pointer; margin-top: 1rem; }
     .cta:hover { filter: brightness(1.12); }
+    /* Where to actually take the finished form. */
+    .place { background: var(--accent-soft); border-radius: 14px; padding: 1rem 1.1rem;
+             margin-top: 1.2rem; text-align: start; }
+    .place-label { display: block; color: var(--muted); font-size: .8rem;
+                   text-transform: uppercase; letter-spacing: .04em; }
+    .place strong { display: block; color: var(--accent); font-size: 1.1rem; margin: .2rem 0; }
+    .place-detail { color: var(--muted); font-size: .9rem; }
     .row { display: flex; gap: .6rem; justify-content: center; align-items: center;
            margin-top: 1rem; flex-wrap: wrap; }
     [hidden] { display: none !important; }
@@ -186,6 +193,11 @@
       <div style="font-size:3rem">✅</div>
       <div class="big" id="doneTitle">Your application is ready.</div>
       <p id="doneMsg">Everything is filled in.</p>
+      <div id="placeBox" class="place" hidden>
+        <span class="place-label" id="placeLabel"></span>
+        <strong id="placeName"></strong>
+        <span class="place-detail" id="placeDetail"></span>
+      </div>
       <div class="row"><button class="cta" id="downloadBtn">Download my application (PDF)</button></div>
       <div class="row"><button class="ghost" id="replayDone">
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -279,6 +291,7 @@
         doneTitle:"Your application is ready.", doneBody:"Everything is filled in.",
         download:"Download my application (PDF)", hearAgain:"Hear that again", startOver:"Start over",
         forgot:"🔒 Downloaded — your answers have now been deleted.",
+        takeTo:"Take your application to",
         fields:{ full_name:"Full name", household_size:"People in household", children_count:"Number of children",
                  monthly_income:"Monthly household income", address:"Home address", dietary_needs:"Allergies or dietary needs" } },
       es: { tagline:"Pide ayuda solo hablando — en tu idioma.",
@@ -299,6 +312,7 @@
         doneTitle:"Tu solicitud está lista.", doneBody:"Está todo relleno.",
         download:"Descargar mi solicitud (PDF)", hearAgain:"Escuchar otra vez", startOver:"Empezar de nuevo",
         forgot:"🔒 Descargada — tus respuestas ya se han borrado.",
+        takeTo:"Lleva tu solicitud a",
         fields:{ full_name:"Nombre completo", household_size:"Personas en el hogar", children_count:"Número de niños",
                  monthly_income:"Ingresos mensuales del hogar", address:"Dirección", dietary_needs:"Alergias o necesidades alimentarias" } },
       ar: { tagline:"اطلب المساعدة بالحديث فقط — بلغتك.",
@@ -319,6 +333,7 @@
         doneTitle:"طلبك جاهز.", doneBody:"تم ملء كل شيء.",
         download:"تنزيل طلبي (PDF)", hearAgain:"استمع مرة أخرى", startOver:"البدء من جديد",
         forgot:"🔒 تم التنزيل — حُذفت إجاباتك الآن.",
+        takeTo:"خذ طلبك إلى",
         fields:{ full_name:"الاسم الكامل", household_size:"عدد أفراد الأسرة", children_count:"عدد الأطفال",
                  monthly_income:"دخل الأسرة الشهري", address:"عنوان السكن", dietary_needs:"الحساسية أو الاحتياجات الغذائية" } },
       uk: { tagline:"Попросіть допомогу просто говорячи — вашою мовою.",
@@ -339,6 +354,7 @@
         doneTitle:"Ваша заява готова.", doneBody:"Усе заповнено.",
         download:"Завантажити заяву (PDF)", hearAgain:"Прослухати ще раз", startOver:"Почати спочатку",
         forgot:"🔒 Завантажено — ваші відповіді видалено.",
+        takeTo:"Віднесіть заяву до",
         fields:{ full_name:"Повне ім'я", household_size:"Осіб у домогосподарстві", children_count:"Кількість дітей",
                  monthly_income:"Місячний дохід родини", address:"Домашня адреса", dietary_needs:"Алергії або дієтичні потреби" } },
       fr: { tagline:"Demandez de l'aide rien qu'en parlant — dans votre langue.",
@@ -359,6 +375,7 @@
         doneTitle:"Votre demande est prête.", doneBody:"Tout est rempli.",
         download:"Télécharger ma demande (PDF)", hearAgain:"Réécouter", startOver:"Recommencer",
         forgot:"🔒 Téléchargée — vos réponses ont été supprimées.",
+        takeTo:"Apportez votre demande à",
         fields:{ full_name:"Nom complet", household_size:"Personnes dans le foyer", children_count:"Nombre d'enfants",
                  monthly_income:"Revenu mensuel du foyer", address:"Adresse", dietary_needs:"Allergies ou besoins alimentaires" } },
     };
@@ -570,8 +587,12 @@
         renderAnswers(d.answers, d.field_focus);
         if (d.lang) detectedLang = d.lang;                       // follow their language
         statusEl.textContent = d.done ? "" : T("speaking");
-        playTts(d.reply);                                        // errors get spoken too
-        if (d.done) finish(d.reply);
+        // Say where to take it in the same breath, so the ending is one thought.
+        const spoken = d.done && d.place
+          ? `${d.reply} ${T("takeTo")} ${d.place.name}${d.place.address ? ", " + d.place.address : ""}.`
+          : d.reply;
+        playTts(spoken);                                         // errors get spoken too
+        if (d.done) finish(d.reply, d.place);
       } catch (e) {
         const msg = T("error");
         showQuestion(msg);
@@ -582,8 +603,15 @@
       }
     }
 
-    function finish(msg) {
+    function finish(msg, place) {
       $("doneMsg").textContent = msg || T("doneBody");
+      if (place && place.name) {
+        $("placeLabel").textContent = T("takeTo");
+        $("placeName").textContent = place.name;
+        $("placeDetail").textContent = [place.address, place.km && `${place.km} km`]
+          .filter(Boolean).join(" · ");
+        $("placeBox").hidden = false;
+      }
       $("doneScreen").hidden = false;
     }
 

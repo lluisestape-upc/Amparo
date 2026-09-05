@@ -24,7 +24,7 @@ RULE = HexColor("#d8dbe6")
 LOGO = Path(__file__).with_name("static") / "dove_white.png"
 
 
-def build_pdf(answers: dict) -> bytes:
+def build_pdf(answers: dict, place: dict | None = None) -> bytes:
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=A4)
     width, height = A4
@@ -69,6 +69,27 @@ def build_pdf(answers: dict) -> bytes:
         c.setLineWidth(0.6)
         c.line(2.2 * cm, y, width - 2.2 * cm, y)
         y -= 0.95 * cm
+
+    # --- Where to take it --------------------------------------------------
+    if place and place.get("name"):
+        y -= 0.4 * cm
+        box_h = 2.1 * cm
+        c.setFillColor(HexColor("#eef2ff"))
+        c.roundRect(2.2 * cm, y - box_h, width - 4.4 * cm, box_h, 8, stroke=0, fill=1)
+        c.setFillColor(MUTED)
+        c.setFont("Helvetica", 9)
+        c.drawString(2.7 * cm, y - 0.75 * cm, "TAKE THIS FORM TO")
+        c.setFillColor(INDIGO)
+        c.setFont("Helvetica-Bold", 12.5)
+        c.drawString(2.7 * cm, y - 1.35 * cm, place["name"])
+        detail = " · ".join(
+            p for p in (place.get("address"), f"{place['km']} km away" if place.get("km") else "") if p
+        )
+        if detail:
+            c.setFillColor(MUTED)
+            c.setFont("Helvetica", 10)
+            c.drawString(2.7 * cm, y - 1.85 * cm, detail)
+        y -= box_h + 0.5 * cm
 
     # --- Signature line ----------------------------------------------------
     y -= 0.8 * cm

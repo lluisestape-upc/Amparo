@@ -46,6 +46,11 @@ Built for the [DEV Weekend Challenge: Generosity Edition](https://dev.to/events/
   gives up the audio goes to Gemini, which transcribes it directly.
 - **Errors are spoken, never silent text.** A tool for people who can't read
   must not report failures in writing.
+- **It tells you where to take it.** When the form is done, the applicant's own
+  address is used to find the nearest real food bank, spoken aloud and printed
+  on the form. Those places come from OpenStreetMap, never from the language
+  model — sending someone to an address a model invented would be worse than
+  saying nothing, so when nothing is found, nothing is claimed.
 - **Interrupt freely.** Tap the mic while it's talking and it stops to listen.
 - **You never lose your place.** Answers survive a page reload or a dropped
   connection, and it welcomes you back where you left off.

@@ -3,3 +3,4 @@ google-genai>=0.3
 reportlab>=4.0
 python-dotenv>=1.0
 elevenlabs>=1.0
+requests>=2.31

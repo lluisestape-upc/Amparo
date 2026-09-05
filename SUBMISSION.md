@@ -95,6 +95,13 @@ you can begin — you just answer in yours, and everything follows from there.
   Gemini, which transcribes it directly and answers in the same call. Recordings
   are re-encoded to 16 kHz mono WAV in the browser rather than trusting container
   support for whatever the browser happens to record.
+- **It tells you where to take it, and it does not guess.** Once the form is
+  complete, the applicant's own address finds the nearest real food bank, which
+  is spoken aloud and printed on the form. Those places come from OpenStreetMap,
+  never from the model. I could have asked Gemini for nearby food banks and it
+  would happily have answered — but sending someone who is already struggling to
+  an address a model invented is worse than telling them nothing. When nothing is
+  found, nothing is claimed.
 - **Nothing is kept.** Answers include income and home address. They are deleted
   the moment the PDF is downloaded, and abandoned sessions expire within the
   hour. A tool that asks vulnerable people for their address should be able to
