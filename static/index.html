@@ -380,6 +380,9 @@
                  monthly_income:"Revenu mensuel du foyer", address:"Adresse", dietary_needs:"Allergies ou besoins alimentaires" } },
     };
 
+    // True once the person picks a language themselves, which then outranks
+    // whatever the conversation detected.
+    let langChosen = !!localStorage.getItem("amparo_lang");
     let uiCode = localStorage.getItem("amparo_lang")
               || (Object.keys(I18N).find(c => (navigator.language || "").startsWith(c)) || "en");
     let uiLang = BCP[uiCode];
@@ -427,7 +430,9 @@
         const b = document.createElement("button");
         b.type = "button"; b.dataset.code = code; b.textContent = name;
         b.setAttribute("role", "menuitem");
-        b.addEventListener("click", () => { applyLang(code); toggleMenu(false); });
+        b.addEventListener("click", () => {
+          langChosen = true; applyLang(code); toggleMenu(false);
+        });
         menu.appendChild(b);
       }
     })();
@@ -636,7 +641,8 @@
       mic.addEventListener("click", async () => {
         if (busy) { statusEl.textContent = T("moment"); return; }
         voice.pause();                       // barge-in: stop talking and listen
-        rec.lang = detectedLang || uiLang;   // follow the conversation, else the UI
+        // A language the person picked wins; otherwise follow the conversation.
+        rec.lang = (langChosen ? uiLang : detectedLang) || uiLang;
         mic.classList.add("listening");
         setMood("listening");
         statusEl.textContent = T("listening");
