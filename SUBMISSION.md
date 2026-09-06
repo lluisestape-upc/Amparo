@@ -28,13 +28,20 @@ You can also correct it at any time, about any field, however long ago you answe
 
 ## Demo
 
-<!-- TODO: embed the 90-second demo video -->
+<!-- PASTE THE YOUTUBE URL BELOW (unlisted is fine). DEV turns a bare YouTube
+     link on its own line into a player. Delete this comment afterwards. -->
 
-<!-- TODO: screenshot: conversation on the left, form filling itself on the right -->
+The greeting arrives in several languages at once, so there is no language menu to read before you can start. You answer in yours, and everything follows from there.
 
-<!-- TODO: screenshot: the completed PDF -->
+<!-- UPLOAD post/1-greeting.png HERE -->
 
-The moment worth watching: one messy spoken sentence, and three fields fill themselves in on the right.
+Then the moment worth watching: one messy spoken sentence, and the fields fill themselves in on the right. Nobody says "household size: three".
+
+<!-- UPLOAD post/2-filling.png HERE -->
+
+And at the end it does not just say "take this to a food bank". It names the nearest real one, speaks it aloud, and prints it on the form.
+
+<!-- UPLOAD post/3-foodbank.png HERE -->
 
 ## Code
 

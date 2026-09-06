@@ -8,3 +8,6 @@ sessions.json
 .venv/
 __pycache__/
 *.pyc
+
+# Demo stills for the write-up
+post/
