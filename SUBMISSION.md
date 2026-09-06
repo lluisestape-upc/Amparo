@@ -35,7 +35,7 @@ The greeting arrives in several languages at once, so there is no language menu 
 
 <!-- UPLOAD post/1-greeting.png HERE -->
 
-Then the moment worth watching: one messy spoken sentence, and the fields fill themselves in on the right. Nobody says "household size: three".
+Then the moment worth watching: one messy spoken sentence, and the fields fill themselves in on the right. In the video I also correct an earlier answer halfway through, in a different language from the one I started in.
 
 <!-- UPLOAD post/2-filling.png HERE -->
 
