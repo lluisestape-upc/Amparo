@@ -75,8 +75,11 @@ python app.py
 
 Open <http://127.0.0.1:5000> in Chrome (the microphone needs Chrome + localhost).
 
-You'll need a free [Gemini API key](https://aistudio.google.com/apikey) and an
-[ElevenLabs API key](https://elevenlabs.io) with the *Text to Speech* scope.
+**Only one key is required.** A free [Gemini API key](https://aistudio.google.com/apikey)
+runs the whole conversation. An [ElevenLabs API key](https://elevenlabs.io) with the
+*Text to Speech* scope adds the spoken voice: leave it out and the app still works,
+just silently, so you can try it with a single key.
+
 Set `GEMINI_MODEL` in `.env` to use a different model than the default.
 
 ## Project layout
