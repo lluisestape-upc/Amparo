@@ -69,7 +69,7 @@ PDF**, and abandoned sessions expire within the hour.
 ```bash
 python -m venv .venv && .venv\Scripts\activate     # Windows
 pip install -r requirements.txt
-cp .env.example .env                                # then add your two keys
+cp .env.example .env                                # then add your Gemini key
 python app.py
 ```
 
